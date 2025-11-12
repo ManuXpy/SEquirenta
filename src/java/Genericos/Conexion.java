@@ -7,7 +7,6 @@ package Genericos;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.logging.Level;
@@ -20,7 +19,11 @@ import javax.swing.JOptionPane;
  */
 public class Conexion {
 
-    private Connection Conexion = null;
+    // 1. Instancia estática y privada (Corazón del Singleton)
+    private static Conexion instance = null;
+
+    // Nomenclatura corregida a minúscula para la convención de variables de Java
+    private Connection conexion = null;
 
     // PostgresSQL
     private final String ControladorBD = "org.postgresql.Driver";
@@ -28,18 +31,19 @@ public class Conexion {
     private final String usuario = "postgres";
     private final String password = "tortilla";
 
-    private ResultSet ResultSet;
+    // Recomendación: Eliminar, ya que ResultSet debe ser local en el DAO.
+    // private ResultSet ResultSet; 
     public boolean conectado = false;
 
-    //constructor que recibe los parametros para conectarse a la base de datos
-    public Conexion() {
+    // 2. Constructor PRIVADO (Restringe la creación de instancias)
+    private Conexion() {
         String url = "jdbc:postgresql://localhost:5432/" + baseDatos;
         try {
             Class.forName(ControladorBD);
-            Conexion = DriverManager.getConnection(url, usuario, password);
+            conexion = DriverManager.getConnection(url, usuario, password);
             conectado = true;
-            Conexion.setAutoCommit(false);
-            //JOptionPane.showMessageDialog(null, "Conexion Ok", "AVISO", JOptionPane.INFORMATION_MESSAGE);
+            conexion.setAutoCommit(false);
+            //...
         } catch (ClassNotFoundException e) {
             System.out.println(Arrays.toString(e.getStackTrace()));
             JOptionPane.showMessageDialog(null, "Conexion Fallida", "AVISO", JOptionPane.INFORMATION_MESSAGE);
@@ -50,14 +54,26 @@ public class Conexion {
         }
     }
 
+    // 3. Método Estático y Público para Obtener la Instancia
+    public static Conexion getInstance() {
+        if (instance == null) {
+            // Instancia "Lazy": solo se crea si es la primera vez que se llama
+            instance = new Conexion();
+        }
+        return instance;
+    }
+
     public Connection getConexion() {
-        return Conexion;
+        return conexion;
     }
 
     public void desConectarBD() {
         try {
-            Conexion.close();
-            //JOptionPane.showMessageDialog(null, "Conexion cerrada", "AVISO", JOptionPane.INFORMATION_MESSAGE);
+            // Usa la variable con la convención corregida
+            if (conexion != null && !conexion.isClosed()) {
+                conexion.close();
+            }
+
         } catch (SQLException ex) {
             Logger.getLogger(Conexion.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -65,7 +81,9 @@ public class Conexion {
 
     public void comit() {
         try {
-            Conexion.commit();
+            if (conexion != null) {
+                conexion.commit();
+            }
         } catch (SQLException ex) {
             Logger.getLogger(Conexion.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -73,10 +91,11 @@ public class Conexion {
 
     public void rollback() {
         try {
-            Conexion.rollback();
+            if (conexion != null) {
+                conexion.rollback();
+            }
         } catch (SQLException ex) {
             Logger.getLogger(Conexion.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-
 }
