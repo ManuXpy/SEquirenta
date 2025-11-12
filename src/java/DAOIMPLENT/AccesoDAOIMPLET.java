@@ -19,35 +19,38 @@ import java.util.logging.Logger;
  */
 public class AccesoDAOIMPLET implements AccesoDAO {
 
-    private String sintaxiSql;
-    private PreparedStatement preparedStatement;
-    private ResultSet resultado;
-    private Conexion conexion;
-
     @Override
     public boolean verificarUsuario(AccesoDTO AccesoDTO) {
-        try {
-            sintaxiSql = null;
-            conexion = new Conexion();
-            //sintaxiSql = "SELECT usuario, pass FROM t_usuarios where usuario =? AND pass =SHA1(?)";
-            sintaxiSql = "SELECT nombre_usuario,contrasena FROM public.usuarios where nombre_usuario=? AND contrasena=?";
-            preparedStatement = conexion.getConexion().prepareStatement(sintaxiSql);
+
+        boolean usuarioValido = false;
+
+        // 1. Obtener la conexión Singleton
+        Conexion conexionSingleton = Conexion.getInstance();
+
+        // Define la sintaxis SQL localmente
+        String sintaxiSql = "SELECT nombre_usuario, contrasena FROM public.usuarios where nombre_usuario=? AND contrasena=?";
+
+        // Usar try-with-resources para PreparedStatement
+        // Esto asegura que el PreparedStatement se cierre automáticamente.
+        try (PreparedStatement preparedStatement = conexionSingleton.getConexion().prepareStatement(sintaxiSql)) {
+
             preparedStatement.setObject(1, AccesoDTO.getNombre_usuario());
             preparedStatement.setObject(2, AccesoDTO.getContrasena());
 
-            resultado = preparedStatement.executeQuery();
-            if (resultado.next()) {
-                return true;
-            }
-        } catch (SQLException ex) {
-            Logger.getLogger(AccesoDAOIMPLET.class.getName()).log(Level.SEVERE, null, ex);
-            return false;
-        } finally {
-            if (conexion != null) {
-                conexion.desConectarBD();
-            }
-        }
-        return false;
+            // Usar try-with-resources para ResultSet
+            // Esto asegura que el ResultSet se cierre automáticamente.
+            try (ResultSet resultado = preparedStatement.executeQuery()) {
 
+                if (resultado.next()) {
+                    usuarioValido = true;
+                }
+            }
+
+        } catch (SQLException ex) {
+            Logger.getLogger(AccesoDAOIMPLET.class.getName()).log(Level.SEVERE, "Error de SQL al verificar usuario.", ex);
+            usuarioValido = false;
+        }
+        // El Singleton de conexión debe permanecer abierto.
+        return usuarioValido;
     }
 }
