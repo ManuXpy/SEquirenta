@@ -21,13 +21,13 @@ import java.util.Properties;
 public class Conexion {
 
     // Instancia estática y privada (Corazón del Singleton)
-    private static Conexion instance = null;
+    private static Conexion instance = null;  
     private Connection conexion = null;
     public boolean conectado = false;
 
     // Ruta del archivo de propiedades
     // Ver porque no puedo poner en una direccion diferente
-    private static final String CONFIG_FILE ="Genericos/config.properties";
+    private static final String CONFIG_FILE ="/Genericos/config.properties";
 
     // Constructor PRIVADO (Restringe la creación de instancias)
     private Conexion() {
